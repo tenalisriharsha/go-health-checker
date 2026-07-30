@@ -1,0 +1,8 @@
+{
+  "timeout_ms": 2000,
+  "endpoints": [
+    { "name": "example", "url": "https://example.com" },
+    { "name": "google", "url": "https://www.google.com" },
+    { "name": "httpbin-404", "url": "https://httpbin.org/status/404" }
+  ]
+}
