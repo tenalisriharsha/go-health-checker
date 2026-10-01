@@ -20,6 +20,8 @@ Real output from running the binary (not mocked):
 
 ![Config error: missing file, exit code 2](docs/screenshots/04-config-error.png)
 
+![All endpoints healthy, exit code 0](docs/screenshots/05-all-healthy.png)
+
 </details>
 
 ## Features
