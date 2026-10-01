@@ -5,6 +5,23 @@ file and prints a JSON report with each endpoint's status code, latency, and
 health. Exits non-zero when any endpoint is unhealthy, so it drops cleanly into
 CI pipelines and cron jobs.
 
+## Preview
+
+Real output from running the binary (not mocked):
+
+![Sample run: 2 healthy, 1 unhealthy endpoint](docs/screenshots/01-sample-run.png)
+
+<details>
+<summary>More views</summary>
+
+![Usage/help output](docs/screenshots/02-help.png)
+
+![-timeout flag forcing every endpoint to time out](docs/screenshots/03-timeout-override.png)
+
+![Config error: missing file, exit code 2](docs/screenshots/04-config-error.png)
+
+</details>
+
 ## Features
 
 - Concurrent checks — all endpoints are probed in parallel, results stay in config order
