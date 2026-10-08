@@ -17,6 +17,16 @@ func main() {
 	timeout := flag.Duration("timeout", 0, "per-request timeout (overrides config, e.g. 2s)")
 	flag.Parse()
 
+	if flag.NArg() > 0 {
+		fmt.Fprintf(os.Stderr, "error: unexpected argument %q (use -config to pass the config file)\n", flag.Arg(0))
+		flag.Usage()
+		os.Exit(2)
+	}
+	if *timeout < 0 {
+		fmt.Fprintf(os.Stderr, "error: -timeout must not be negative, got %v\n", *timeout)
+		os.Exit(2)
+	}
+
 	cfg, err := checker.LoadConfig(*configPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
