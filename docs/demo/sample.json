@@ -1,0 +1,8 @@
+{
+  "timeout_ms": 2000,
+  "endpoints": [
+    { "name": "local-ok", "url": "http://127.0.0.1:8765/" },
+    { "name": "local-redirect", "url": "http://127.0.0.1:8765/old" },
+    { "name": "local-missing", "url": "http://127.0.0.1:8765/nope" }
+  ]
+}
