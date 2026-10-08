@@ -19,7 +19,7 @@ file and reports status codes and latency as JSON.
 
 ## Test results
 
-`go test ./... -v` — **13/13 tests passing** (plus `go vet` clean and
+`go test ./... -v` — **12/12 test functions passing (18 including the 6 table-driven subtests)** (plus `go vet` clean and
 `gofmt` clean):
 
 - Config: valid parse, default timeout, 6 table-driven invalid-input cases,
