@@ -1,0 +1,26 @@
+$ go-health-checker -config healthy.json
+{
+  "checked_at": "2026-10-08T18:10:04Z",
+  "summary": {
+    "total": 2,
+    "healthy": 2,
+    "unhealthy": 0
+  },
+  "results": [
+    {
+      "name": "local-ok",
+      "url": "http://127.0.0.1:8765/",
+      "status_code": 200,
+      "latency_ms": 52,
+      "healthy": true
+    },
+    {
+      "name": "local-redirect",
+      "url": "http://127.0.0.1:8765/old",
+      "status_code": 200,
+      "latency_ms": 104,
+      "healthy": true
+    }
+  ]
+}
+[exit status 0]

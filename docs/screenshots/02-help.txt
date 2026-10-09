@@ -1,0 +1,7 @@
+$ go-health-checker -h
+Usage of go-health-checker:
+  -config string
+    	path to JSON config file (default "config.json")
+  -timeout duration
+    	per-request timeout (overrides config, e.g. 2s)
+[exit status 0]

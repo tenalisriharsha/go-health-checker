@@ -1,0 +1,33 @@
+$ go-health-checker -config sample.json -timeout 10ms
+{
+  "checked_at": "2026-10-08T18:10:00Z",
+  "summary": {
+    "total": 3,
+    "healthy": 0,
+    "unhealthy": 3
+  },
+  "results": [
+    {
+      "name": "local-ok",
+      "url": "http://127.0.0.1:8765/",
+      "latency_ms": 10,
+      "healthy": false,
+      "error": "Get \"http://127.0.0.1:8765/\": context deadline exceeded"
+    },
+    {
+      "name": "local-redirect",
+      "url": "http://127.0.0.1:8765/old",
+      "latency_ms": 10,
+      "healthy": false,
+      "error": "Get \"http://127.0.0.1:8765/old\": context deadline exceeded"
+    },
+    {
+      "name": "local-missing",
+      "url": "http://127.0.0.1:8765/nope",
+      "latency_ms": 10,
+      "healthy": false,
+      "error": "Get \"http://127.0.0.1:8765/nope\": context deadline exceeded"
+    }
+  ]
+}
+[exit status 1]

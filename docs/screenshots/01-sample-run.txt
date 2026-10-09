@@ -1,0 +1,34 @@
+$ go-health-checker -config sample.json
+{
+  "checked_at": "2026-10-08T18:09:57Z",
+  "summary": {
+    "total": 3,
+    "healthy": 2,
+    "unhealthy": 1
+  },
+  "results": [
+    {
+      "name": "local-ok",
+      "url": "http://127.0.0.1:8765/",
+      "status_code": 200,
+      "latency_ms": 52,
+      "healthy": true
+    },
+    {
+      "name": "local-redirect",
+      "url": "http://127.0.0.1:8765/old",
+      "status_code": 200,
+      "latency_ms": 104,
+      "healthy": true
+    },
+    {
+      "name": "local-missing",
+      "url": "http://127.0.0.1:8765/nope",
+      "status_code": 404,
+      "latency_ms": 52,
+      "healthy": false,
+      "error": "unexpected status 404"
+    }
+  ]
+}
+[exit status 1]
