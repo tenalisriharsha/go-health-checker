@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -42,17 +43,34 @@ func TestParseConfigDefaultTimeout(t *testing.T) {
 
 func TestParseConfigErrors(t *testing.T) {
 	cases := map[string]string{
-		"invalid json": `{not json`,
-		"no endpoints": `{"endpoints": []}`,
-		"missing name": `{"endpoints": [{"url": "http://x.test"}]}`,
-		"missing url":  `{"endpoints": [{"name": "a"}]}`,
-		"bad scheme":   `{"endpoints": [{"name": "a", "url": "ftp://x.test"}]}`,
-		"relative url": `{"endpoints": [{"name": "a", "url": "/health"}]}`,
+		"invalid json":  `{not json`,
+		"trailing json": `{"endpoints": [{"name": "a", "url": "http://x.test"}]} {}`,
+		"no endpoints":  `{"endpoints": []}`,
+		"missing name":  `{"endpoints": [{"url": "http://x.test"}]}`,
+		"missing url":   `{"endpoints": [{"name": "a"}]}`,
+		"bad scheme":    `{"endpoints": [{"name": "a", "url": "ftp://x.test"}]}`,
+		"relative url":  `{"endpoints": [{"name": "a", "url": "/health"}]}`,
 	}
 	for name, input := range cases {
 		t.Run(name, func(t *testing.T) {
 			if _, err := ParseConfig([]byte(input)); err == nil {
 				t.Errorf("expected error for %s, got nil", name)
+			}
+		})
+	}
+}
+
+func TestParseConfigRejectsUnknownFields(t *testing.T) {
+	cases := map[string]string{
+		"timeout typo":           `{"timeout": 100, "endpoints": [{"name": "a", "url": "http://x.test"}]}`,
+		"unknown endpoint field": `{"endpoints": [{"name": "a", "url": "http://x.test", "port": 8080}]}`,
+	}
+	for name, input := range cases {
+		t.Run(name, func(t *testing.T) {
+			if _, err := ParseConfig([]byte(input)); err == nil {
+				t.Fatal("expected an error for an unknown config field")
+			} else if !strings.Contains(err.Error(), "unknown field") {
+				t.Errorf("expected a clear unknown-field error, got %v", err)
 			}
 		})
 	}

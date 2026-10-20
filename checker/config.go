@@ -1,8 +1,10 @@
 package checker
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"time"
@@ -43,7 +45,15 @@ func LoadConfig(path string) (Config, error) {
 // ParseConfig parses and validates config JSON.
 func ParseConfig(data []byte) (Config, error) {
 	var cfg Config
-	if err := json.Unmarshal(data, &cfg); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&cfg); err != nil {
+		return Config{}, fmt.Errorf("parse config: %w", err)
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		if err == nil {
+			return Config{}, fmt.Errorf("parse config: unexpected trailing JSON data")
+		}
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}
 	if len(cfg.Endpoints) == 0 {
