@@ -1,5 +1,7 @@
 # go-health-checker
 
+[![CI](https://github.com/tenalisriharsha/go-health-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/tenalisriharsha/go-health-checker/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 A small CLI tool that probes a list of HTTP endpoints defined in a JSON config
 file and prints a JSON report with each endpoint's status code, latency, and
 health. Exits non-zero when any endpoint is unhealthy, so it drops cleanly into
@@ -166,3 +168,7 @@ The suite covers config parsing and validation (table-driven), healthy/redirect/
 error/timeout/refused-connection probing against local `httptest` servers,
 result ordering, summary aggregation, and a concurrency sanity check.
 `main_test.go` builds the binary and checks the documented exit codes end to end.
+
+## License
+
+[MIT](LICENSE)
