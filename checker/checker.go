@@ -94,16 +94,23 @@ func (c *Checker) check(ep Endpoint) Result {
 
 	start := time.Now()
 	resp, err := c.Client.Do(req)
-	res.LatencyMs = time.Since(start).Milliseconds()
 	if err != nil {
+		res.LatencyMs = time.Since(start).Milliseconds()
 		res.Error = err.Error()
 		return res
 	}
 	defer resp.Body.Close()
-	// Drain a bounded amount so connections can be reused.
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
+	// Drain a bounded amount so connections can be reused. The request
+	// context deadline still applies to the body read, so a stalled body
+	// fails here instead of reporting healthy off the headers alone.
+	_, bodyErr := io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
+	res.LatencyMs = time.Since(start).Milliseconds()
 
 	res.StatusCode = resp.StatusCode
+	if bodyErr != nil {
+		res.Error = fmt.Sprintf("read body: %v", bodyErr)
+		return res
+	}
 	res.Healthy = resp.StatusCode >= 200 && resp.StatusCode < 400
 	if !res.Healthy {
 		res.Error = fmt.Sprintf("unexpected status %d", resp.StatusCode)

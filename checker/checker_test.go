@@ -163,6 +163,34 @@ func TestCheckTimeout(t *testing.T) {
 	}
 }
 
+func TestCheckStalledBodyUnhealthy(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.(http.Flusher).Flush()
+		time.Sleep(300 * time.Millisecond)
+		w.Write([]byte("ok"))
+	}))
+	defer srv.Close()
+
+	start := time.Now()
+	res := New(50 * time.Millisecond).check(Endpoint{Name: "slow-body", URL: srv.URL})
+	if res.Healthy {
+		t.Errorf("expected unhealthy when the body stalls past the timeout, got %+v", res)
+	}
+	if res.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 recorded, got %d", res.StatusCode)
+	}
+	if res.Error == "" {
+		t.Error("expected error message for the stalled body")
+	}
+	if res.LatencyMs < 40 {
+		t.Errorf("expected latency to reflect the full request, got %dms", res.LatencyMs)
+	}
+	if elapsed := time.Since(start); elapsed > 250*time.Millisecond {
+		t.Errorf("check took %v, expected it to abort near the 50ms timeout", elapsed)
+	}
+}
+
 func TestCheckAllPreservesOrderAndSummarizes(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ok", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
