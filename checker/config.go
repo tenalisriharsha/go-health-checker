@@ -1,6 +1,7 @@
 package checker
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -43,7 +44,9 @@ func LoadConfig(path string) (Config, error) {
 // ParseConfig parses and validates config JSON.
 func ParseConfig(data []byte) (Config, error) {
 	var cfg Config
-	if err := json.Unmarshal(data, &cfg); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&cfg); err != nil {
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}
 	if len(cfg.Endpoints) == 0 {
