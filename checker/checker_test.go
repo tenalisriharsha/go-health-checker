@@ -48,6 +48,7 @@ func TestParseConfigErrors(t *testing.T) {
 		"missing url":  `{"endpoints": [{"name": "a"}]}`,
 		"bad scheme":   `{"endpoints": [{"name": "a", "url": "ftp://x.test"}]}`,
 		"relative url": `{"endpoints": [{"name": "a", "url": "/health"}]}`,
+		"unknown key":  `{"timeout": 100, "endpoints": [{"name": "a", "url": "http://x.test"}]}`,
 	}
 	for name, input := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -55,6 +56,18 @@ func TestParseConfigErrors(t *testing.T) {
 				t.Errorf("expected error for %s, got nil", name)
 			}
 		})
+	}
+}
+
+// TestParseConfigTypoInTimeoutKey guards against issue #3: a typo like
+// "timeout" instead of "timeout_ms" must not silently fall back to the
+// default timeout with no indication anything was wrong.
+func TestParseConfigTypoInTimeoutKey(t *testing.T) {
+	if _, err := ParseConfig([]byte(`{
+		"timeout": 100,
+		"endpoints": [{"name": "a", "url": "http://x.test"}]
+	}`)); err == nil {
+		t.Fatalf("expected error for unknown config key \"timeout\", got nil")
 	}
 }
 

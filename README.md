@@ -109,6 +109,8 @@ cp config.example.json config.json
 
 - `timeout_ms` — optional per-request timeout (default: 5000 ms; overridden by `-timeout`)
 - `endpoints` — required, non-empty; each entry needs a `name` and an absolute `http(s)` URL
+- Unknown top-level or endpoint fields (e.g. a typo like `timeout` instead of
+  `timeout_ms`) are rejected with an error instead of being silently ignored
 
 ### Example output
 
