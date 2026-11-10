@@ -94,14 +94,19 @@ func (c *Checker) check(ep Endpoint) Result {
 
 	start := time.Now()
 	resp, err := c.Client.Do(req)
-	res.LatencyMs = time.Since(start).Milliseconds()
 	if err != nil {
+		res.LatencyMs = time.Since(start).Milliseconds()
 		res.Error = err.Error()
 		return res
 	}
 	defer resp.Body.Close()
 	// Drain a bounded amount so connections can be reused.
-	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
+	_, drainErr := io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
+	res.LatencyMs = time.Since(start).Milliseconds()
+	if drainErr != nil {
+		res.Error = drainErr.Error()
+		return res
+	}
 
 	res.StatusCode = resp.StatusCode
 	res.Healthy = resp.StatusCode >= 200 && resp.StatusCode < 400
