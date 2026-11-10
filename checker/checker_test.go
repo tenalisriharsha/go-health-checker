@@ -176,6 +176,33 @@ func TestCheckTimeout(t *testing.T) {
 	}
 }
 
+// TestCheckSlowBodyUnhealthyOnTimeout guards against issue #9: a server that
+// sends 200 OK quickly but then stalls while streaming the body past the
+// configured timeout must be reported unhealthy, with LatencyMs reflecting
+// the full stalled request rather than just the time-to-headers.
+func TestCheckSlowBodyUnhealthyOnTimeout(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		time.Sleep(300 * time.Millisecond)
+		_, _ = w.Write([]byte("too-late-body"))
+	}))
+	defer srv.Close()
+
+	res := New(50 * time.Millisecond).check(Endpoint{Name: "slow-body", URL: srv.URL})
+	if res.Healthy {
+		t.Errorf("expected unhealthy when the body stalls past the timeout, got healthy result: %+v", res)
+	}
+	if res.Error == "" {
+		t.Error("expected an error describing the stalled body read, got none")
+	}
+	if res.LatencyMs < 50 {
+		t.Errorf("expected LatencyMs to reflect the full stalled request (>=50ms), got %d", res.LatencyMs)
+	}
+}
+
 func TestCheckAllPreservesOrderAndSummarizes(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ok", func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
