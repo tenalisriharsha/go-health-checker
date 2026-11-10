@@ -7,8 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 var binPath string
@@ -50,6 +52,16 @@ func writeConfig(t *testing.T, dir, name, url string) string {
 	t.Helper()
 	path := filepath.Join(dir, name)
 	cfg := `{"endpoints": [{"name": "svc", "url": "` + url + `"}]}`
+	if err := os.WriteFile(path, []byte(cfg), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func writeConfigWithTimeout(t *testing.T, dir, name, url string, timeoutMs int) string {
+	t.Helper()
+	path := filepath.Join(dir, name)
+	cfg := `{"timeout_ms": ` + strconv.Itoa(timeoutMs) + `, "endpoints": [{"name": "svc", "url": "` + url + `"}]}`
 	if err := os.WriteFile(path, []byte(cfg), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -127,5 +139,32 @@ func TestNegativeTimeoutRejected(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "-timeout must not be negative") {
 		t.Errorf("stderr should explain the bad timeout, got %q", stderr)
+	}
+}
+
+// -timeout must override the config's timeout_ms, not just reject negative
+// values. A server that responds slower than -timeout but faster than the
+// config's generous timeout_ms should be reported unhealthy only when
+// -timeout is actually applied.
+func TestTimeoutFlagOverridesConfigTimeout(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(150 * time.Millisecond)
+	}))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	cfg := writeConfigWithTimeout(t, dir, "config.json", srv.URL, 2000)
+
+	stdout, stderr, code := runCLI(t, dir, "-config", cfg)
+	if code != 0 {
+		t.Fatalf("without -timeout: exit code = %d, want 0 (stderr: %s, stdout: %s)", code, stderr, stdout)
+	}
+
+	stdout, stderr, code = runCLI(t, dir, "-config", cfg, "-timeout", "10ms")
+	if code != 1 {
+		t.Fatalf("with -timeout 10ms: exit code = %d, want 1 (stderr: %s, stdout: %s)", code, stderr, stdout)
+	}
+	if !strings.Contains(stdout, "deadline exceeded") {
+		t.Errorf("stdout should report a timeout error, got %q", stdout)
 	}
 }
