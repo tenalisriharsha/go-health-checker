@@ -71,6 +71,32 @@ func TestParseConfigTypoInTimeoutKey(t *testing.T) {
 	}
 }
 
+// TestParseConfigCaseVariantKeyRejected guards against issue #14: a key that
+// differs only in case from a documented field name (e.g. "Timeout_Ms"
+// instead of "timeout_ms", or "NAME"/"URL" instead of "name"/"url") must be
+// rejected the same way a differently-named typo already is, instead of
+// being silently matched to the real field by encoding/json's
+// case-insensitive field lookup.
+func TestParseConfigCaseVariantKeyRejected(t *testing.T) {
+	cases := map[string]string{
+		"case variant top-level key": `{
+			"Timeout_Ms": 1,
+			"endpoints": [{"name": "a", "url": "http://x.test"}]
+		}`,
+		"case variant endpoint keys": `{
+			"timeout_ms": 5000,
+			"endpoints": [{"NAME": "a", "URL": "http://x.test"}]
+		}`,
+	}
+	for name, input := range cases {
+		t.Run(name, func(t *testing.T) {
+			if _, err := ParseConfig([]byte(input)); err == nil {
+				t.Errorf("expected error for %s, got nil", name)
+			}
+		})
+	}
+}
+
 func TestLoadConfigMissingFile(t *testing.T) {
 	if _, err := LoadConfig(filepath.Join(t.TempDir(), "nope.json")); err == nil {
 		t.Error("expected error for missing file, got nil")
