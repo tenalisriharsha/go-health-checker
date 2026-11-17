@@ -41,6 +41,27 @@ func LoadConfig(path string) (Config, error) {
 	return ParseConfig(data)
 }
 
+// configKeys and endpointKeys list the exact (case-sensitive) JSON keys
+// documented for Config and Endpoint. encoding/json's DisallowUnknownFields
+// matches field tags case-insensitively before rejecting unknown fields, so
+// a key that differs only in case (e.g. "Timeout_Ms") would otherwise be
+// silently accepted instead of being treated as a typo.
+var configKeys = map[string]bool{"timeout_ms": true, "endpoints": true}
+var endpointKeys = map[string]bool{"name": true, "url": true}
+
+func checkExactKeys(data []byte, allowed map[string]bool, context string) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	for key := range raw {
+		if !allowed[key] {
+			return fmt.Errorf("%s: unknown field %q", context, key)
+		}
+	}
+	return nil
+}
+
 // ParseConfig parses and validates config JSON.
 func ParseConfig(data []byte) (Config, error) {
 	var cfg Config
@@ -49,6 +70,22 @@ func ParseConfig(data []byte) (Config, error) {
 	if err := dec.Decode(&cfg); err != nil {
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}
+
+	var rawCfg struct {
+		Endpoints []json.RawMessage `json:"endpoints"`
+	}
+	if err := json.Unmarshal(data, &rawCfg); err != nil {
+		return Config{}, fmt.Errorf("parse config: %w", err)
+	}
+	if err := checkExactKeys(data, configKeys, "config"); err != nil {
+		return Config{}, fmt.Errorf("parse config: %w", err)
+	}
+	for i, rawEp := range rawCfg.Endpoints {
+		if err := checkExactKeys(rawEp, endpointKeys, fmt.Sprintf("endpoint %d", i)); err != nil {
+			return Config{}, fmt.Errorf("parse config: %w", err)
+		}
+	}
+
 	if len(cfg.Endpoints) == 0 {
 		return Config{}, fmt.Errorf("config must define at least one endpoint")
 	}
